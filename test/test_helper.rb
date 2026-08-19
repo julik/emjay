@@ -18,6 +18,21 @@ module EmjayTestHelpers
     # Normalize line endings
     out.gsub!("\r\n", "\n")
 
+    # Normalize whitespace inside <style> blocks. MJML 5 pretty-prints CSS
+    # (multi-line, spaces after ":") while emjay emits single-line, tight CSS.
+    # Both are semantically identical, so within style bodies we collapse
+    # whitespace to a single space and then strip it around structural CSS
+    # punctuation. Descendant combinators (spaces between selectors) are
+    # preserved.
+    out.gsub!(/(<style\b[^>]*>)(.*?)(<\/style>)/m) do
+      open_tag = $1
+      css = $2
+      close_tag = $3
+      css = css.gsub(/\s+/, " ")
+      css.gsub!(/\s*([{};:,~>+!])\s*/, '\1')
+      "#{open_tag}#{css.strip}#{close_tag}"
+    end
+
     # Collapse whitespace inside opening tags: <tag \n  attr="val"\n  >
     # becomes <tag attr="val">
     # We handle this by collapsing whitespace between < and > for opening tags,
@@ -40,6 +55,22 @@ module EmjayTestHelpers
         "<#{tag} #{normalized_attrs}>"
       end
     end
+
+    # Collapse whitespace between tags (`>   <` → `><`). Whitespace-only text
+    # nodes between block-level tags are insignificant and MJML 5 formats them
+    # differently from emjay.
+    out.gsub!(/>\s+</m, "><")
+
+    # Collapse whitespace inside text nodes and around tag boundaries. MJML 5
+    # sometimes emits `<a> Click me </a>` (padded, single line) while emjay
+    # emits `<a>\nClick me\n</a>`; both render identically.
+    out.gsub!(/>(\s*[^<]+?\s*)</m) do |_m|
+      inner = $1.gsub(/\s+/, " ").strip
+      ">#{inner}<"
+    end
+
+    # Re-insert one newline after every `>` for readable diffs.
+    out.gsub!(/>/, ">\n")
 
     # Strip leading/trailing whitespace per line
     out.gsub!(/^[ \t]+/, "")

@@ -123,6 +123,7 @@ module Emjay
             "width" => icon_size
           },
           img: {
+            "border" => "0",
             "border-radius" => get_attribute("border-radius"),
             "display" => "block"
           },

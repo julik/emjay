@@ -12,7 +12,7 @@ emjay implements the full set of standard MJML components:
 
 **Features:** CSS inlining via `<mj-style inline="inline">`, global default attributes, `mj-class`, `mj-html-attributes` with CSS selectors, custom fonts, responsive breakpoints, Outlook conditionals, `lang`/`dir` attributes.
 
-All components and features from the [MJML documentation](https://documentation.mjml.io/) should work as described. The [MJML templates and examples](https://mjml.io/templates) are a good starting point for building your own emails. Output is tested against the upstream [MJML 4 JavaScript implementation](https://github.com/mjmlio/mjml) using fixture-based comparison and backported behavioral tests. If you find a case where emjay produces different output from the reference MJML implementation, please [open an issue](https://github.com/julik/emjay/issues).
+All components and features from the [MJML documentation](https://documentation.mjml.io/) should work as described. The [MJML templates and examples](https://mjml.io/templates) are a good starting point for building your own emails. Output is tested against the upstream [MJML 5.4.0 JavaScript implementation](https://github.com/mjmlio/mjml/tree/5.4.0) using fixture-based comparison and backported behavioral tests. If you find a case where emjay produces different output from the reference MJML implementation, please [open an issue](https://github.com/julik/emjay/issues).
 
 ## Installation
 
