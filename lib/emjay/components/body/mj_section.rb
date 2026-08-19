@@ -28,6 +28,7 @@ module Emjay
           "border-top" => "string",
           "direction" => "enum(ltr,rtl)",
           "full-width" => "enum(full-width,false,)",
+          "gutter" => "unit(px,%)",
           "padding" => "unit(px,%){1,4}",
           "padding-top" => "unit(px,%)",
           "padding-bottom" => "unit(px,%)",
@@ -54,7 +55,9 @@ module Emjay
         widths = get_box_widths
         @context.merge(
           container_width: "#{widths[:box]}px",
-          gap: get_attribute("gap")
+          gap: get_attribute("gap"),
+          gutter: get_attribute("gutter"),
+          direction: get_attribute("direction")
         )
       end
 

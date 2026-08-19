@@ -48,6 +48,7 @@ module Emjay
           "align" => "left",
           "icon-position" => "left",
           "color" => "#000",
+          "border" => "0",
           "border-radius" => "3px",
           "font-family" => "Ubuntu, Helvetica, Arial, sans-serif",
           "font-size" => "13px",
@@ -66,6 +67,7 @@ module Emjay
           "icon-position" => "enum(left,right)",
           "background-color" => "color",
           "color" => "color",
+          "border" => "string",
           "border-radius" => "string",
           "font-family" => "string",
           "font-size" => "unit(px)",
@@ -123,7 +125,7 @@ module Emjay
             "width" => icon_size
           },
           img: {
-            "border" => "0",
+            "border" => get_attribute("border"),
             "border-radius" => get_attribute("border-radius"),
             "display" => "block"
           },

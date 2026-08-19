@@ -1,0 +1,9 @@
+<mjml>
+  <mj-body>
+    <mj-hero mode="fixed-height" height="300px" background-color="#2a3448" inner-padding="20px 40px">
+      <mj-text align="center" color="#ffffff" font-size="20px">
+        Hero content with inner padding
+      </mj-text>
+    </mj-hero>
+  </mj-body>
+</mjml>

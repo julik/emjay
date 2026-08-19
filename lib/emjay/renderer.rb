@@ -90,10 +90,13 @@ module Emjay
         global_data: global_data,
         container_width: "600px",
         add_media_query: ->(class_name, data) {
-          pw = data[:parsed_width]
-          pw = pw.to_i if pw == pw.to_i
-          global_data.media_queries[class_name] =
+          global_data.media_queries[class_name] = if data.key?(:padding)
+            "{ padding:#{data[:padding]} !important; }"
+          else
+            pw = data[:parsed_width]
+            pw = pw.to_i if pw == pw.to_i
             "{ width:#{pw}#{data[:unit]} !important; max-width: #{pw}#{data[:unit]}; }"
+          end
         },
         add_head_style: ->(identifier, head_style_fn) {
           global_data.head_style[identifier] = head_style_fn

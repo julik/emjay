@@ -1,0 +1,15 @@
+<mjml>
+  <mj-body>
+    <mj-section gutter="30px">
+      <mj-column>
+        <mj-text>One</mj-text>
+      </mj-column>
+      <mj-column>
+        <mj-text>Two</mj-text>
+      </mj-column>
+      <mj-column>
+        <mj-text>Three</mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
