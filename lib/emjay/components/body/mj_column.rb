@@ -71,6 +71,8 @@ module Emjay
       def get_styles
         has_br = has_border_radius?
         has_ibr = has_inner_border_radius?
+        outlook_gutter = get_outlook_gutter_styles
+        mobile_gutter = get_mobile_gutter_styles
 
         table_style = {
           "background-color" => get_attribute("background-color"),
@@ -91,7 +93,8 @@ module Emjay
             "direction" => get_attribute("direction"),
             "display" => "inline-block",
             "vertical-align" => get_attribute("vertical-align"),
-            "width" => get_mobile_width
+            "width" => get_mobile_width,
+            **mobile_gutter
           },
           table: {
             **(has_gutter? ? {
@@ -107,7 +110,8 @@ module Emjay
           },
           tdOutlook: {
             "vertical-align" => get_attribute("vertical-align"),
-            "width" => get_width_as_pixel
+            "width" => get_width_as_pixel,
+            **outlook_gutter
           },
           gutter: {
             **table_style,
@@ -121,7 +125,9 @@ module Emjay
       end
 
       def render
-        classes_name = "#{get_column_class} mj-outlook-group-fix"
+        classes_name = get_column_class.dup
+        classes_name += " #{get_desktop_gutter_class_name}" if has_column_gutter?
+        classes_name += " mj-outlook-group-fix"
         css_class = get_attribute("css-class")
         classes_name += " #{css_class}" if css_class
 
@@ -180,15 +186,20 @@ module Emjay
       def get_column_class
         add_media_query = @context[:add_media_query]
 
-        parsed = get_parsed_width
-        formatted = format_float(parsed[:parsed_width]).to_s.tr(".", "-")
+        parsed = has_column_gutter? ? get_desktop_width : get_parsed_width
+        normalized = (parsed[:unit] == "px") ? normalize_px_value(parsed[:parsed_width]) : parsed[:parsed_width]
+        formatted = format_float(normalized).to_s.tr(".", "-")
 
         class_name = case parsed[:unit]
         when "%" then "mj-column-per-#{formatted}"
         else "mj-column-px-#{formatted}"
         end
 
-        add_media_query&.call(class_name, parsed)
+        add_media_query&.call(class_name, {unit: parsed[:unit], parsed_width: normalized})
+
+        if has_column_gutter? && !@context[:is_in_group]
+          add_media_query&.call(get_desktop_gutter_class_name, {padding: get_desktop_padding})
+        end
 
         class_name
       end
@@ -196,6 +207,138 @@ module Emjay
       # Formats a float to match JS toString() — strips trailing .0
       def format_float(value)
         (value == value.to_i) ? value.to_i : value
+      end
+
+      def has_column_gutter?
+        gutter = @context[:gutter]
+        !gutter.nil? && gutter != ""
+      end
+
+      def get_normalized_gutter_value(target_unit)
+        gutter = @context[:gutter]
+        return 0 if gutter.nil? || gutter == ""
+
+        parsed = WidthParser.call(gutter, parse_float_to_int: false)
+        parent_width = @context[:container_width]
+
+        return parsed[:parsed_width] if parsed[:unit] == target_unit
+
+        if target_unit == "%" && parsed[:unit] == "px"
+          (parsed[:parsed_width] / parent_width.to_f) * 100
+        elsif target_unit == "px" && parsed[:unit] == "%"
+          (parent_width.to_f * parsed[:parsed_width]) / 100
+        else
+          parsed[:parsed_width]
+        end
+      end
+
+      def get_desktop_unit
+        get_parsed_width[:unit]
+      end
+
+      def get_desktop_width
+        parsed = get_parsed_width
+        return parsed unless has_column_gutter?
+
+        sibling = @props[:sibling] || 1
+        index = @props[:index] || 0
+        unit = parsed[:unit]
+        gutter = get_normalized_gutter_value(unit)
+        reduction = (gutter * (sibling - 1)) / sibling.to_f
+        reduced = [0, normalize_unit_value(parsed[:parsed_width] - reduction)].max
+
+        if unit == "px"
+          floor_width = reduced.floor
+          fractional = reduced - floor_width
+          extra = [0, [sibling, (sibling * fractional).round].min].max
+          {parsed_width: floor_width + ((index < extra) ? 1 : 0), unit: unit}
+        else
+          {parsed_width: reduced, unit: unit}
+        end
+      end
+
+      def get_desktop_gutter_class_name
+        unit = get_desktop_unit
+        gutter = get_normalized_gutter_value(unit)
+        unit_token = (unit == "%") ? "per" : unit
+        direction_token = (@context[:direction] == "rtl") ? "-rtl" : ""
+        normalized = (unit == "px") ? normalize_px_value(gutter) : gutter
+        gutter_token = normalize_unit_value(normalized).to_s.tr(".", "-")
+        sibling = @props[:sibling] || 1
+        index = @props[:index] || 0
+        "mj-column-gutter-#{sibling}-#{index + 1}-#{unit_token}-#{gutter_token}#{direction_token}"
+      end
+
+      def get_desktop_padding_values(unit)
+        first = @props[:first]
+        last = @props[:last]
+        sibling = @props[:sibling] || 1
+        direction = @context[:direction]
+        gutter = get_normalized_gutter_value(unit)
+        normalized = (unit == "px") ? normalize_px_value(gutter) : gutter
+        is_px = unit == "px"
+        half_leading = is_px ? (normalized / 2.0).ceil : normalized / 2.0
+        half_trailing = is_px ? (normalized / 2.0).floor : normalized / 2.0
+        is_rtl = direction == "rtl"
+
+        return {top: 0, right: 0, bottom: 0, left: 0} if sibling == 1
+
+        if is_rtl
+          {top: 0, right: first ? 0 : half_trailing, bottom: 0, left: last ? 0 : half_leading}
+        else
+          {top: 0, right: last ? 0 : half_leading, bottom: 0, left: first ? 0 : half_trailing}
+        end
+      end
+
+      def get_mobile_padding_values
+        first = @props[:first]
+        last = @props[:last]
+        gutter = get_normalized_gutter_value("%")
+        half = gutter / 2.0
+        {top: first ? 0 : half, right: 0, bottom: last ? 0 : half, left: 0}
+      end
+
+      def format_padding(top, right, bottom, left, unit)
+        if unit == "px"
+          "#{normalize_px_value(top)}px #{normalize_px_value(right)}px #{normalize_px_value(bottom)}px #{normalize_px_value(left)}px"
+        else
+          "#{normalize_unit_value(top)}#{unit} #{normalize_unit_value(right)}#{unit} #{normalize_unit_value(bottom)}#{unit} #{normalize_unit_value(left)}#{unit}"
+        end
+      end
+
+      def get_desktop_padding
+        unit = get_desktop_unit
+        v = get_desktop_padding_values(unit)
+        format_padding(v[:top], v[:right], v[:bottom], v[:left], unit)
+      end
+
+      def get_mobile_padding
+        v = get_mobile_padding_values
+        format_padding(v[:top], v[:right], v[:bottom], v[:left], "%")
+      end
+
+      def get_outlook_gutter_styles
+        return {} unless has_column_gutter?
+        {"padding" => get_desktop_padding_values("px").then { |v| format_padding(v[:top], v[:right], v[:bottom], v[:left], "px") }}
+      end
+
+      def get_mobile_gutter_styles
+        return {} unless has_column_gutter?
+
+        if @context[:is_in_group]
+          {"padding" => get_desktop_padding}
+        else
+          {"padding" => get_mobile_padding}
+        end
+      end
+
+      def normalize_unit_value(value)
+        rounded = value.to_f.round(6)
+        (rounded == rounded.to_i) ? rounded.to_i : rounded
+      end
+
+      def normalize_px_value(value)
+        value.to_f.round
       end
 
       def has_border_radius?

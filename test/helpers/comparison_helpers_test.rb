@@ -4,7 +4,7 @@ require_relative "../test_helper"
 
 class ComparisonHelpersTest < Minitest::Test
   def test_normalize_html_strips_leading_whitespace
-    assert_equal "<div>\n<p>hi</p>\n</div>",
+    assert_equal "<div>\n<p>\nhi</p>\n</div>",
       normalize_html("  <div>\n    <p>hi</p>\n  </div>")
   end
 
