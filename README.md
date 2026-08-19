@@ -141,6 +141,10 @@ MJML partials work with the standard `render` helper. Use them to share common s
 </mj-section>
 ```
 
+### mj-include is not supported
+
+emjay does not implement MJML's `<mj-include />` file-inclusion directive. In a Rails app, use standard ERB partials via `<%= render "shared/header" %>` (as shown above) — partials also accept locals, which `mj-include` does not.
+
 ### How it works
 
 The `.mjml` template handler is an ERB passthrough — it does not compile MJML itself. Instead, an ActionMailer interceptor (`Emjay::Rails::MailInterceptor`) compiles the assembled MJML to HTML after Rails has applied layouts and partials. This means `yield` in a layout receives MJML (not HTML), and the full document is compiled in one pass.
