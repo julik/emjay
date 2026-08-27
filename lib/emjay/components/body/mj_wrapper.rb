@@ -51,6 +51,4 @@ module Emjay
       end
     end
   end
-
-  Registry.register(Components::MjWrapper)
 end

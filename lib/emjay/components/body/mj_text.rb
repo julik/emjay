@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require_relative "../../body_component"
-require_relative "../../registry"
 require_relative "../../helpers/conditional_tag"
 
 module Emjay
@@ -95,6 +94,4 @@ module Emjay
       end
     end
   end
-
-  Registry.register(Components::MjText)
 end
