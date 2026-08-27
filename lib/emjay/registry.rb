@@ -1,88 +1,69 @@
 # frozen_string_literal: true
 
 module Emjay
+  # Lazy autoloader for MJML components. Scans `lib/emjay/components/**/*.rb`
+  # once at load time, then derives both the MJML tag name and the Ruby class
+  # from each filename:
+  #
+  #   components/body/mj_button.rb  →  tag "mj-button"  →  Emjay::Components::MjButton
+  #
+  # Files are `require`d and constants resolved on first `find`.
   module Registry
-    MAPPING = {
-      "mj-attributes" => ["components/head/mj_attributes", :MjAttributes],
-      "mj-breakpoint" => ["components/head/mj_breakpoint", :MjBreakpoint],
-      "mj-font" => ["components/head/mj_font", :MjFont],
-      "mj-head" => ["components/head/mj_head", :MjHead],
-      "mj-html-attributes" => ["components/head/mj_html_attributes", :MjHtmlAttributes],
-      "mj-preview" => ["components/head/mj_preview", :MjPreview],
-      "mj-style" => ["components/head/mj_style", :MjStyle],
-      "mj-title" => ["components/head/mj_title", :MjTitle],
-      "mj-accordion" => ["components/body/mj_accordion", :MjAccordion],
-      "mj-accordion-element" => ["components/body/mj_accordion_element", :MjAccordionElement],
-      "mj-accordion-text" => ["components/body/mj_accordion_text", :MjAccordionText],
-      "mj-accordion-title" => ["components/body/mj_accordion_title", :MjAccordionTitle],
-      "mj-body" => ["components/body/mj_body", :MjBody],
-      "mj-button" => ["components/body/mj_button", :MjButton],
-      "mj-carousel" => ["components/body/mj_carousel", :MjCarousel],
-      "mj-carousel-image" => ["components/body/mj_carousel_image", :MjCarouselImage],
-      "mj-column" => ["components/body/mj_column", :MjColumn],
-      "mj-divider" => ["components/body/mj_divider", :MjDivider],
-      "mj-group" => ["components/body/mj_group", :MjGroup],
-      "mj-hero" => ["components/body/mj_hero", :MjHero],
-      "mj-image" => ["components/body/mj_image", :MjImage],
-      "mj-navbar" => ["components/body/mj_navbar", :MjNavbar],
-      "mj-navbar-link" => ["components/body/mj_navbar_link", :MjNavbarLink],
-      "mj-raw" => ["components/body/mj_raw", :MjRaw],
-      "mj-section" => ["components/body/mj_section", :MjSection],
-      "mj-social" => ["components/body/mj_social", :MjSocial],
-      "mj-social-element" => ["components/body/mj_social_element", :MjSocialElement],
-      "mj-spacer" => ["components/body/mj_spacer", :MjSpacer],
-      "mj-table" => ["components/body/mj_table", :MjTable],
-      "mj-text" => ["components/body/mj_text", :MjText],
-      "mj-wrapper" => ["components/body/mj_wrapper", :MjWrapper]
-    }.freeze
+    COMPONENTS_ROOT = File.expand_path("components", __dir__)
+
+    PATHS = Dir.glob("{head,body}/*.rb", base: COMPONENTS_ROOT).sort.each_with_object({}) do |rel, h|
+      basename = File.basename(rel, ".rb") # e.g. "mj_html_attributes"
+      tag = basename.tr("_", "-")           # → "mj-html-attributes"
+      h[tag] = File.join(COMPONENTS_ROOT, rel)
+    end.freeze
 
     @loaded = {}
     @mutex = Mutex.new
 
+    def self.find(tag_name)
+      @loaded[tag_name] ||= load_component(tag_name)
+    end
+
+    def self.components
+      @components ||= LazyComponents.new
+    end
+
+    # Kept for backwards compatibility with callers that eagerly register.
     def self.register(component_class)
       @loaded[component_class.component_name] = component_class
     end
 
-    def self.find(tag_name)
-      return @loaded[tag_name] if @loaded.key?(tag_name)
-
-      entry = MAPPING[tag_name]
-      return nil unless entry
-
+    def self.load_component(tag_name)
+      path = PATHS[tag_name] or return nil
       @mutex.synchronize do
-        return @loaded[tag_name] if @loaded.key?(tag_name)
-
-        require_relative entry[0]
-        @loaded[tag_name] = Emjay::Components.const_get(entry[1])
+        return @loaded[tag_name] if @loaded[tag_name]
+        require path
+        const_name = File.basename(path, ".rb").split("_").map(&:capitalize).join
+        Emjay::Components.const_get(const_name)
       end
     end
 
-    # Lazy hash-like proxy: the renderer only ever does `components[tag]`,
-    # so we resolve on lookup instead of eager-loading every component.
+    # The renderer treats `Registry.components` as a hash keyed by tag name.
+    # This proxy resolves each lookup through `Registry.find` so components
+    # only load when actually referenced.
     class LazyComponents
+      include Enumerable
+
       def [](tag_name)
         Registry.find(tag_name)
       end
 
-      include Enumerable
-
       def each
-        MAPPING.each_key { |tag| yield(tag, Registry.find(tag)) }
+        PATHS.each_key { |tag| yield tag, Registry.find(tag) }
       end
 
       def keys
-        MAPPING.keys
+        PATHS.keys
       end
 
       def values
-        MAPPING.each_key.map { |tag| Registry.find(tag) }
+        PATHS.each_key.map { |tag| Registry.find(tag) }
       end
-    end
-
-    COMPONENTS = LazyComponents.new
-
-    def self.components
-      COMPONENTS
     end
   end
 end
