@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    emjay (0.2.0)
+    emjay (0.2.1)
       nokogiri (>= 1.12)
       premailer
 
