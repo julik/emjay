@@ -249,7 +249,7 @@ module Emjay
         if unit == "px"
           floor_width = reduced.floor
           fractional = reduced - floor_width
-          extra = [0, [sibling, (sibling * fractional).round].min].max
+          extra = (sibling * fractional).round.clamp(0, sibling)
           {parsed_width: floor_width + ((index < extra) ? 1 : 0), unit: unit}
         else
           {parsed_width: reduced, unit: unit}

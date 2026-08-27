@@ -10,7 +10,7 @@ Rake::TestTask.new(:test) do |t|
   t.test_files = FileList["test/**/*_test.rb"]
 end
 
-task default: [:test, "standard:fix"]
+task default: [:test, :standard]
 
 namespace :fixtures do
   desc "Regenerate expected HTML files from .mjml fixtures using upstream JS MJML"

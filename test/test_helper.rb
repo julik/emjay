@@ -70,7 +70,7 @@ module EmjayTestHelpers
     end
 
     # Re-insert one newline after every `>` for readable diffs.
-    out.gsub!(/>/, ">\n")
+    out.gsub!(">", ">\n")
 
     # Strip leading/trailing whitespace per line
     out.gsub!(/^[ \t]+/, "")
