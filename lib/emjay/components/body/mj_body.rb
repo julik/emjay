@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require_relative "../../body_component"
-require_relative "../../registry"
 
 module Emjay
   module Components
@@ -65,6 +64,4 @@ module Emjay
       end
     end
   end
-
-  Registry.register(Components::MjBody)
 end

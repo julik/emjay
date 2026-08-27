@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require_relative "../../body_component"
-require_relative "../../registry"
 require_relative "../../helpers/conditional_tag"
 require_relative "../../helpers/make_lower_breakpoint"
 require_relative "../../helpers/gen_random_hex_string"
@@ -182,6 +181,4 @@ module Emjay
       end
     end
   end
-
-  Registry.register(Components::MjNavbar)
 end
