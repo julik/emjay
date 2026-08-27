@@ -9,6 +9,8 @@ module Emjay
   #
   # Files are `require`d and constants resolved on first `find`.
   module Registry
+    class UnknownComponent < StandardError; end
+
     COMPONENTS_ROOT = File.expand_path("components", __dir__)
 
     PATHS = Dir.glob("{head,body}/*.rb", base: COMPONENTS_ROOT).sort.each_with_object({}) do |rel, h|
@@ -50,7 +52,15 @@ module Emjay
       include Enumerable
 
       def [](tag_name)
-        Registry.find(tag_name)
+        component = Registry.find(tag_name)
+        # We only reach here on render paths (never during parsing, which uses
+        # Registry.find directly and tolerates nil). If a tag looks like MJML
+        # but resolves to nothing, it's almost certainly a typo like
+        # `<mj-nonesuch>` — surface it instead of silently rendering blank.
+        if component.nil? && tag_name.to_s.start_with?("mj-")
+          raise UnknownComponent, "Unknown MJML component #{tag_name.inspect}"
+        end
+        component
       end
 
       def each

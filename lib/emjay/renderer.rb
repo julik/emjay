@@ -185,9 +185,11 @@ module Emjay
 
       children = element.children.select(&:element?).map { |child| nokogiri_to_hash(child) }
 
-      # For ending-tag components, content is the inner HTML
+      # For ending-tag components, content is the inner HTML. Only MJML tags
+      # can be components — plain HTML (e.g. <a>, <b> nested in mj-text) never
+      # is, so don't waste a Registry lookup on it.
       tag_name = element.name
-      component_class = Registry.find(tag_name)
+      component_class = tag_name.start_with?("mj-") ? Registry.find(tag_name) : nil
       content = if component_class&.ending_tag?
         inner = element.inner_html.strip
         # Restore escaped bare < characters (from template syntax in mj-raw etc.)
