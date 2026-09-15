@@ -23,4 +23,5 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "nokogiri", ">= 1.12"
   spec.add_dependency "premailer"
+  spec.add_dependency "measurometer", "~> 1.3"
 end
