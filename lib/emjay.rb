@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "measurometer"
+
 require_relative "emjay/version"
 require_relative "emjay/registry"
 require_relative "emjay/component"

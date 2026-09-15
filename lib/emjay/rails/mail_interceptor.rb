@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "measurometer"
+
 module Emjay
   module Rails
     class MailInterceptor
@@ -14,14 +16,18 @@ module Emjay
       end
 
       def compile_mjml!(message)
+        Measurometer.instrument("emjay.mail_interceptor.compile") { compile_message!(message) }
+      end
+
+      private
+
+      def compile_message!(message)
         if message.multipart?
           message.parts.each { |part| compile_part!(part) }
         else
           compile_part!(message)
         end
       end
-
-      private
 
       def compile_part!(part)
         if part.multipart?

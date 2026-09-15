@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "measurometer"
+
 module Emjay
   module Rails
     module TemplateHandler
@@ -8,8 +10,10 @@ module Emjay
         # template extension with ERB support. MJML → HTML compilation
         # happens later via Emjay::Rails::MailInterceptor, after Rails
         # has assembled the full render (template + layout).
-        erb_handler = ActionView::Template.registered_template_handler(:erb)
-        erb_handler.call(template, source)
+        Measurometer.instrument("emjay.template_handler.compile") do
+          erb_handler = ActionView::Template.registered_template_handler(:erb)
+          erb_handler.call(template, source)
+        end
       end
     end
   end

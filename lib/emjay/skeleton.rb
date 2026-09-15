@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "measurometer"
 require_relative "helpers/fonts"
 require_relative "helpers/media_queries"
 require_relative "helpers/styles"
@@ -26,12 +27,20 @@ module Emjay
 
       before_doctype_str = before_doctype.empty? ? "" : "#{before_doctype}\n"
 
-      fonts_tags = Fonts.build_tags(content, inline_style, fonts)
-      media_query_tags = MediaQueries.build_tags(breakpoint, media_queries,
-        force_owa_desktop: force_owa_desktop,
-        printer_support: printer_support)
-      component_styles = Styles.build_from_components(breakpoint, components_head_style, head_style)
-      tag_styles = Styles.build_from_tags(breakpoint, style)
+      fonts_tags = Measurometer.instrument("emjay.skeleton.fonts") do
+        Fonts.build_tags(content, inline_style, fonts)
+      end
+      media_query_tags = Measurometer.instrument("emjay.skeleton.media_queries") do
+        MediaQueries.build_tags(breakpoint, media_queries,
+          force_owa_desktop: force_owa_desktop,
+          printer_support: printer_support)
+      end
+      component_styles = Measurometer.instrument("emjay.skeleton.component_styles") do
+        Styles.build_from_components(breakpoint, components_head_style, head_style)
+      end
+      tag_styles = Measurometer.instrument("emjay.skeleton.tag_styles") do
+        Styles.build_from_tags(breakpoint, style)
+      end
       raw = head_raw.compact.join("\n")
 
       <<~HTML

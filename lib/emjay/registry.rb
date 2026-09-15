@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "measurometer"
+
 module Emjay
   # Lazy autoloader for MJML components. Scans `lib/emjay/components/**/*.rb`
   # once at load time, then derives both the MJML tag name and the Ruby class
@@ -39,9 +41,11 @@ module Emjay
       path = PATHS[tag_name] or return nil
       @mutex.synchronize do
         return @loaded[tag_name] if @loaded[tag_name]
-        require path
-        const_name = File.basename(path, ".rb").split("_").map(&:capitalize).join
-        Emjay::Components.const_get(const_name)
+        Measurometer.instrument("emjay.registry.load_component.#{tag_name}") do
+          require path
+          const_name = File.basename(path, ".rb").split("_").map(&:capitalize).join
+          Emjay::Components.const_get(const_name)
+        end
       end
     end
 
